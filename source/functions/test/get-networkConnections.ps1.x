@@ -40,18 +40,15 @@ function get-prowlNetworkConnections
     }
     
     process{
-        if($(get-winAdminStatus) -ne $true)
-        {
-            throw 'Not Elevated'
-        }
+        
         $adapters = (Get-NetAdapter|where-object{$_.Status -eq 'Up'}).name
         $activeIps = (get-netIpAddress|where-object{$_.InterfaceAlias -in $adapters}).ipAddress
-        $validConnections = (Get-NetTCPConnection|where-object{$_.localAddress -in $activeIps})
+        $validConnections = (Get-NetTCPConnection) #|where-object{$_.localAddress -in $activeIps})
         $validConnections | add-member -MemberType noteproperty -Name 'Protocol' -Value 'TCP'
 
         #Need to get the UDPs as well
 
-        $udpConnections = (Get-NetUDPEndpoint|where-object{$_.localAddress -in $activeIps -or $_.LocalAddress -eq '0.0.0.0' -or $_.localAddress -eq '[::]'})
+        $udpConnections = (Get-NetUDPEndpoint) #|where-object{$_.localAddress -in $activeIps -or $_.LocalAddress -eq '0.0.0.0' -or $_.localAddress -eq '[::]'})
         $udpSelect = @(
             @{
                 Name = 'Protocol'
@@ -111,8 +108,8 @@ function get-prowlNetworkConnections
                 expression = {$_.OwningProcess}
             }
             @{
-                name = 'CmdLine'
-                expression = {(Get-Process -Id $_.OwningProcess).Commandline}
+                name = 'Cmdpath'
+                expression = {(Get-Process -Id $_.OwningProcess).path}
             }
             @{
                 name = 'ProcessName'

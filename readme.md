@@ -30,32 +30,50 @@ Latest Release Notes: [here](./documentation/1.0.1/release.md)
 ##  Getting Started
 
 ### Installation
-How to install:
-```powershell
-install-yourmodule
-
-```
+Start PowerShell in Admin
 
 ---
 
-### Configuration
-How to install:
-```powershell
-Any Special Config
+### Download and import
 
+
+```powershell
+[Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+$path = 'c:\psprowl'
+if(!(test-path $path))
+{
+    new-item -itemtype directory -path $path
+}
+$zipPath = "$path\prowl.zip"
+Invoke-WebRequest -Uri 'https://github.com/adrian-andersson/prowl_autobot/releases/download/v1.0.3/prowl.zip' -OutFile $zipPath -Verbose -UseBasicParsing'
+
+#Check for expand-archive
+if($(try{get-command expand-archive -erroraction stop}catch{}))
+{
+    expand-archive -path $zipPath -destinationPath 'c:\prowl\'
+
+}else{
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    [System.IO.Compression.ZipFile]::ExtractToDirectory($zipPath,'c:\prowl\')
+}
+
+import-module 'c:\prowl\prowl\v1.0.3\prowl.psd1'
 ```
 
-### Example
+### Start Investigating
 
 ```powershell
-get-yourexample
+get-prowlSystemReport
 
 ```
 
 ***
 ## What Is It
+A PowerShell module to help get a security profile of a windows instance
 
-Put Details About your module here
+## To Do
+
+ - Fix the problem with getting local users that seems to sometimes occur
 
 ***
 ## Acknowledgements

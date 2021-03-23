@@ -18,12 +18,12 @@
       <S N="moduleName">prowl</S>
       <S N="moduleDescription">Like the autobot of the same name, prowl around the Windows System and report back on security implications</S>
       <S N="companyName"> </S>
-      <Version N="version">1.0.1.0</Version>
+      <Version N="version">1.0.3.0</Version>
       <S N="guid">28a16472-e184-4f75-aac6-c5bd3c0a5c64</S>
       <B N="AutoIncrementRevision">true</B>
       <B N="RemoveSingleLineQuotes">false</B>
       <B N="RemoveEmptyLines">false</B>
-      <Version N="minimumPsVersion">5.0.0.0</Version>
+      <Version N="minimumPsVersion">4.0</Version>
       <Nil N="RequiredModules" />
       <Nil N="Tags" />
       <Nil N="Repository" />
@@ -36,25 +36,52 @@
       <S N="licenseUri"></S>
       <S N="projectUri"></S>
       <S N="iconUri"></S>
-      <S N="versionAsTag">1.0.1</S>
+      <S N="versionAsTag">1.0.3</S>
       <I32 N="revisionCount">5</I32>
       <Obj N="previousRelease" RefId="2">
         <TN RefId="2">
           <T>System.Collections.Hashtable</T>
           <T>System.Object</T>
         </TN>
-        <DCT />
-      </Obj>
-      <Obj N="lastRelease" RefId="3">
-        <TNRef RefId="2" />
         <DCT>
           <En>
             <S N="Key">date</S>
-            <Obj N="Value" RefId="4">
-              <DT>2021-03-15T23:28:13.6000073+11:00</DT>
+            <Obj N="Value" RefId="3">
+              <DT>2021-03-23T14:04:44.551975+11:00</DT>
               <MS>
-                <Obj N="DisplayHint" RefId="5">
+                <Obj N="DisplayHint" RefId="4">
                   <TN RefId="3">
+                    <T>Deserialized.Microsoft.PowerShell.Commands.DisplayHintType</T>
+                    <T>Deserialized.System.Enum</T>
+                    <T>Deserialized.System.ValueType</T>
+                    <T>Deserialized.System.Object</T>
+                  </TN>
+                  <ToString>DateTime</ToString>
+                  <I32>2</I32>
+                </Obj>
+              </MS>
+            </Obj>
+          </En>
+          <En>
+            <S N="Key">version</S>
+            <Version N="Value">1.0.2.0</Version>
+          </En>
+        </DCT>
+      </Obj>
+      <Obj N="lastRelease" RefId="5">
+        <TNRef RefId="2" />
+        <DCT>
+          <En>
+            <S N="Key">version</S>
+            <Version N="Value">1.0.3.0</Version>
+          </En>
+          <En>
+            <S N="Key">date</S>
+            <Obj N="Value" RefId="6">
+              <DT>2021-03-23T15:06:39.6209154+11:00</DT>
+              <MS>
+                <Obj N="DisplayHint" RefId="7">
+                  <TN RefId="4">
                     <T>Microsoft.PowerShell.Commands.DisplayHintType</T>
                     <T>System.Enum</T>
                     <T>System.ValueType</T>
@@ -65,10 +92,6 @@
                 </Obj>
               </MS>
             </Obj>
-          </En>
-          <En>
-            <S N="Key">version</S>
-            <Version N="Value">1.0.1.0</Version>
           </En>
         </DCT>
       </Obj>

@@ -8,7 +8,7 @@ Module Mixed by BarTender
 Module Details:
 	Module: prowl
 	Description: Like the autobot of the same name, prowl around the Windows System and report back on security implications
-	Revision: 1.0.0.4
+	Revision: 1.0.2.1
 	Author: Adrian.Andersson
 	Company:  
 
@@ -23,56 +23,82 @@ function Get-prowlAntivirusProducts {
     )
     BEGIN
     {
-        [Flags()] enum ProductState 
+        if($PSVersionTable.PSVersion -gt [version]::new('5.0.0'))
         {
-            Off         = 0x0000
-            On          = 0x1000
-            Snoozed     = 0x2000
-            Expired     = 0x3000
+            [Flags()] enum ProductState 
+            {
+                Off         = 0x0000
+                On          = 0x1000
+                Snoozed     = 0x2000
+                Expired     = 0x3000
+            }
+            
+            [Flags()] enum SignatureStatus
+            {
+                UpToDate     = 0x00
+                OutOfDate    = 0x10
+            }
+            
+            [Flags()] enum ProductOwner
+            {
+                NonMs        = 0x000
+                Windows      = 0x100
+            }
+            
+            # define bit masks
+            
+            [Flags()] enum ProductFlags
+            {
+                SignatureStatus = 0x00F0
+                ProductOwner    = 0x0F00
+                ProductState    = 0xF000
+            }
         }
         
-        [Flags()] enum SignatureStatus
-        {
-            UpToDate     = 0x00
-            OutOfDate    = 0x10
-        }
-        
-        [Flags()] enum ProductOwner
-        {
-            NonMs        = 0x000
-            Windows      = 0x100
-        }
-        
-        # define bit masks
-        
-        [Flags()] enum ProductFlags
-        {
-            SignatureStatus = 0x00F0
-            ProductOwner    = 0x0F00
-            ProductState    = 0xF000
-        }
     }
     PROCESS
     {
-        $AntivirusProduct = Get-CimInstance -Namespace root/SecurityCenter2 -Classname AntiVirusProduct
-        foreach($avProduct in $AntivirusProduct)
+        try{
+            $AntivirusProduct = Get-CimInstance -Namespace root/SecurityCenter2 -Classname AntiVirusProduct
+        }catch{
+            write-warning 'CIMInstance for NameSpace SecurityCenter2 and class AntiVirusProduct unavailable'
+        }
+        
+        if($AntivirusProduct)
         {
-            $exe = $avProduct.pathToSignedReportingExe | Split-Path -Leaf
-            
-            $cimFilter = "name='$exe'"
-            $cimProc = get-cimINstance win32_process -filter $cimFilter
+            foreach($avProduct in $AntivirusProduct)
+            {
+                $exe = $avProduct.pathToSignedReportingExe | Split-Path -Leaf
+                
+                $cimFilter = "name='$exe'"
+                $cimProc = get-cimINstance win32_process -filter $cimFilter
+    
+                [UInt32]$state = $avProduct.productState
 
-            [UInt32]$state = $avProduct.productState
-
-            [PSCustomObject]@{
-                ProductName = $avProduct.DisplayName
-                ProductState = [ProductState]($state -band [ProductFlags]::ProductState)
-                SignatureStatus = [SignatureStatus]($state -band [ProductFlags]::SignatureStatus)
-                Owner = [ProductOwner]($state -band [ProductFlags]::ProductOwner)
-                EXE = $exe
-                ProcessIds = $cimProc.processId -join ','
+                if($PSVersionTable.PSVersion -gt [version]::new('5.0.0'))
+                {
+                
+                    [PSCustomObject]@{
+                        ProductName = $avProduct.DisplayName
+                        ProductState = [ProductState]($state -band [ProductFlags]::ProductState)
+                        SignatureStatus = [SignatureStatus]($state -band [ProductFlags]::SignatureStatus)
+                        Owner = [ProductOwner]($state -band [ProductFlags]::ProductOwner)
+                        EXE = $exe
+                        ProcessIds = $cimProc.processId -join ','
+                    }
+                }else{
+                    [PSCustomObject]@{
+                        ProductName = $avProduct.DisplayName
+                        ProductState = ''#[ProductState]($state -band [ProductFlags]::ProductState)
+                        SignatureStatus = ''#[SignatureStatus]($state -band [ProductFlags]::SignatureStatus)
+                        Owner = ''#[ProductOwner]($state -band [ProductFlags]::ProductOwner)
+                        EXE = $exe
+                        ProcessIds = $cimProc.processId -join ','
+                    }
+                }
             }
         }
+        
     }
 }
 
@@ -654,8 +680,7 @@ function get-prowlUserAnalysis
 
         $localUsers = Get-CimInstance -Class Win32_UserAccount -Filter  "LocalAccount='True' and Disabled='False'"
         
-        $localAdminGroup = get-ciminstance win32_group -filter 'Name = "Administrators"'
-        $localAdminUsers = Get-CimAssociatedInstance -Association win32_groupuser -InputObject $localAdminGroup
+        $localAdminUsers = get-ciminstance win32_group -filter 'Name = "Administrators"'|Get-CimAssociatedInstance  -Association win32_groupuser
         $localAccountAdmins = $localUsers|where-object{$_.Caption -in $localAdminUsers.caption}
 
 
@@ -938,16 +963,19 @@ function get-prowlSystemReport
         $os.LastUpdate|out-file $filePath -Append -NoClobber
 
         "_-OS Hotfixes-_`n"|out-file $filePath -Append -NoClobber
-        $os.winOs|format-table|out-string|out-file $filePath -Append -NoClobber
+        $os.Hotfix|format-table|out-string|out-file $filePath -Append -NoClobber
+
+        "_-OS Drives-_`n"|out-file $filePath -Append -NoClobber
+        $os.Drives|format-table|out-string|out-file $filePath -Append -NoClobber
 
         "_-INTERNET IP-_`n"|out-file $filePath -Append -NoClobber
         get-prowlInternetIpAddress|out-string|out-file $filePath -Append -NoClobber
 
         "++++AWS DATA++++`n"|out-file $filePath -Append -NoClobber
-        $(get-prowlAwsMetaData)|foramt-list|out-string|out-file $filePath -Append -NoClobber
+        $(get-prowlAwsMetaData)|format-list|out-string|out-file $filePath -Append -NoClobber
 
         "++++ANTI VIRUS++++`n"|out-file $filePath -Append -NoClobber
-        $(Get-prowlAntivirusProducts)|foramt-list|out-string|out-file $filePath -Append -NoClobber
+        $(Get-prowlAntivirusProducts)|format-list|out-string|out-file $filePath -Append -NoClobber
 
         "++++USER DATA++++`n"|out-file $filePath -Append -NoClobber
         $userData = get-prowlUserAnalysis
@@ -955,25 +983,25 @@ function get-prowlSystemReport
         $userData|Select-object EventCount,FirstEventId,LastEventId,AnomalyCheckSum,FirstRecordDate,LastRecordDate,LocalUserAdmins|format-List|out-string|out-file $filePath -Append -NoClobber
 
         "_-Local Users-_`n"|out-file $filePath -Append -NoClobber
-        $userData.localUsers|foramt-list|out-string|out-file $filePath -Append -NoClobber
+        $userData.localUsers|format-list|out-string|out-file $filePath -Append -NoClobber
 
         "_-Admins and Admin Groups-_`n"|out-file $filePath -Append -NoClobber
-        $userData.localAdminsAndGroups|foramt-list|out-string|out-file $filePath -Append -NoClobber
+        $userData.localAdminsAndGroups|format-list|out-string|out-file $filePath -Append -NoClobber
 
         "_-Login Success Summary-_`n"|out-file $filePath -Append -NoClobber
-        $userData.LoginSuccessSummary|foramt-list|out-string|out-file $filePath -Append -NoClobber
+        $userData.LoginSuccessSummary|format-list|out-string|out-file $filePath -Append -NoClobber
 
         "_-Login Failure Summary-_`n"|out-file $filePath -Append -NoClobber
-        $userData.LoginFailureSummary|foramt-list|out-string|out-file $filePath -Append -NoClobber
+        $userData.LoginFailureSummary|format-list|out-string|out-file $filePath -Append -NoClobber
 
         "++++ANTI VIRUS++++`n"|out-file $filePath -Append -NoClobber
-        $(Get-prowlAntivirusProducts)|foramt-list|out-string|out-file $filePath -Append -NoClobber
+        $(Get-prowlAntivirusProducts)|format-list|out-string|out-file $filePath -Append -NoClobber
 
         "++++SERVICES++++`n"|out-file $filePath -Append -NoClobber
-        $(get-prowlNonMsServices)|foramt-list|out-string|out-file $filePath -Append -NoClobber
+        $(get-prowlNonMsServices)|format-list|out-string|out-file $filePath -Append -NoClobber
 
         "++++NETWORK CONNECTIONS++++`n"|out-file $filePath -Append -NoClobber
-        $(get-prowlNetworkConnections)|foramt-list|out-string|out-file $filePath -Append -NoClobber
+        $(get-prowlNetworkConnections)|format-list|out-string|out-file $filePath -Append -NoClobber
         
     }
     
@@ -1112,10 +1140,7 @@ function get-prowlWindowsOsData
 
     [CmdletBinding()]
     PARAM(
-        #PARAM DESCRIPTION
-        [Parameter(Mandatory,ValueFromPipelineByPropertyName)]
-        [Alias("p1")]
-        [string]$Param1
+
     )
     begin{
         #Return the script name when running verbose, makes it tidier
@@ -1163,7 +1188,7 @@ function get-prowlWindowsOsData
         $returnHash.winOs = get-ciminstance win32_operatingSystem|Select-Object $winOsSelect
         $returnHash.Hotfix = get-hotfix|select-object $hotfixSelect
         $returnHash.LastUpdate = $($returnHash.Hotfix|sort-object 'InstalledOn' -Descending | Select-Object -First 1).InstalledOn
-        $resturnHash.Drives = get-psdrive|where-object {$_.Provider -like '*FileSystem*'}|Select-Object $psDriveSelect
+        $returnHash.Drives = get-psdrive|where-object {$_.Provider -like '*FileSystem*'}|Select-Object $psDriveSelect
         [pscustomObject]$returnHash
     }
 
