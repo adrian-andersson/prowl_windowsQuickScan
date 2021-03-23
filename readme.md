@@ -3,7 +3,7 @@
 
 > Like the autobot of the same name, prowl around the Windows System and report back on security implications
 
-[releasebadge]: https://img.shields.io/static/v1.svg?label=version&message=1.0.1&color=blue
+[releasebadge]: https://img.shields.io/static/v1.svg?label=version&message=1.0.3&color=blue
 [datebadge]: https://img.shields.io/static/v1.svg?label=Date&message=2021-03-15&color=yellow
 [psbadge]: https://img.shields.io/static/v1.svg?label=PowerShell&message=5.0.0&color=5391FE&logo=powershell
 [btbadge]: https://img.shields.io/static/v1.svg?label=bartender&message=6.2.0&color=0B2047
