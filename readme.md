@@ -57,7 +57,7 @@ if($(try{get-command expand-archive -erroraction stop}catch{}))
     [System.IO.Compression.ZipFile]::ExtractToDirectory($zipPath,'c:\prowl\')
 }
 
-import-module 'c:\prowl\prowl\v1.0.3\prowl.psd1'
+import-module 'C:\prowl\prowl\1.0.3\prowl.psd1'
 ```
 
 ### Start Investigating
