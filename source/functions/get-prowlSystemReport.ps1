@@ -87,9 +87,6 @@ function get-prowlSystemReport
         "_-Login Failure Summary-_`n"|out-file $filePath -Append -NoClobber
         $userData.LoginFailureSummary|format-list|out-string|out-file $filePath -Append -NoClobber
 
-        "++++ANTI VIRUS++++`n"|out-file $filePath -Append -NoClobber
-        $(Get-prowlAntivirusProducts)|format-list|out-string|out-file $filePath -Append -NoClobber
-
         "++++SERVICES++++`n"|out-file $filePath -Append -NoClobber
         $(get-prowlNonMsServices)|format-list|out-string|out-file $filePath -Append -NoClobber
 

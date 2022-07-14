@@ -40,24 +40,27 @@ Start PowerShell in Admin
 ```powershell
 [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 $path = 'c:\psprowl'
+$ver = '1.0.4'
+$gitLink = 'https://github.com/adrian-andersson/prowl_autobot/releases/download'
+
 if(!(test-path $path))
 {
     new-item -itemtype directory -path $path
 }
 $zipPath = "$path\prowl.zip"
-Invoke-WebRequest -Uri 'https://github.com/adrian-andersson/prowl_autobot/releases/download/v1.0.3/prowl.zip' -OutFile $zipPath -Verbose -UseBasicParsing
+Invoke-WebRequest -Uri "$gitLink/v$ver/prowl.zip' -OutFile $zipPath -Verbose -UseBasicParsing
 
 #Check for expand-archive
 if($(try{get-command expand-archive -erroraction stop}catch{}))
 {
-    expand-archive -path $zipPath -destinationPath 'c:\prowl\'
+    expand-archive $zipPath $path
 
 }else{
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     [System.IO.Compression.ZipFile]::ExtractToDirectory($zipPath,'c:\prowl\')
 }
 
-import-module 'C:\prowl\prowl\1.0.3\prowl.psd1'
+import-module "$path\prowl\$ver\prowl.psd1"
 ```
 
 ### Start Investigating

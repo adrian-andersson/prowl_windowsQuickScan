@@ -111,8 +111,13 @@ function get-prowlNetworkConnections
                 expression = {(Get-Process -Id $_.OwningProcess).ProcessName}
             }
             @{
+                name = 'cmdPath'
+                expression = {(Get-Process -Id $_.OwningProcess).path}
+            }
+            @{
                 name = 'CmdLine'
-                expression = {(Get-Process -Id $_.OwningProcess).Commandline}
+                #expression = {(Get-Process -Id $_.OwningProcess).Commandline}
+                expression = {$cimInst = get-cimINstance win32_process -filter "ProcessId = '$($_.OwningProcess)'";$cimInst.CommandLine}
             }
             @{
                 name = 'username'
