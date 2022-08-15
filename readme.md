@@ -48,7 +48,7 @@ if(!(test-path $path))
     new-item -itemtype directory -path $path
 }
 $zipPath = "$path\prowl.zip"
-Invoke-WebRequest -Uri "$gitLink/v$ver/prowl.zip' -OutFile $zipPath -Verbose -UseBasicParsing
+Invoke-WebRequest -Uri "$gitLink/v$ver/prowl.zip" -OutFile $zipPath -Verbose -UseBasicParsing
 
 #Check for expand-archive
 if($(try{get-command expand-archive -erroraction stop}catch{}))

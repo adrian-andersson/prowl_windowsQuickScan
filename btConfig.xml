@@ -18,7 +18,7 @@
       <S N="moduleName">prowl</S>
       <S N="moduleDescription">Like the autobot of the same name, prowl around the Windows System and report back on security implications</S>
       <S N="companyName"> </S>
-      <Version N="version">1.0.3.0</Version>
+      <Version N="version">1.0.7.0</Version>
       <S N="guid">28a16472-e184-4f75-aac6-c5bd3c0a5c64</S>
       <B N="AutoIncrementRevision">true</B>
       <B N="RemoveSingleLineQuotes">false</B>
@@ -36,7 +36,7 @@
       <S N="licenseUri"></S>
       <S N="projectUri"></S>
       <S N="iconUri"></S>
-      <S N="versionAsTag">1.0.3</S>
+      <S N="versionAsTag">1.0.7</S>
       <I32 N="revisionCount">5</I32>
       <Obj N="previousRelease" RefId="2">
         <TN RefId="2">
@@ -45,9 +45,13 @@
         </TN>
         <DCT>
           <En>
+            <S N="Key">version</S>
+            <Version N="Value">1.0.6.0</Version>
+          </En>
+          <En>
             <S N="Key">date</S>
             <Obj N="Value" RefId="3">
-              <DT>2021-03-23T14:04:44.551975+11:00</DT>
+              <DT>2022-08-02T12:01:57.2755651+10:00</DT>
               <MS>
                 <Obj N="DisplayHint" RefId="4">
                   <TN RefId="3">
@@ -62,23 +66,15 @@
               </MS>
             </Obj>
           </En>
-          <En>
-            <S N="Key">version</S>
-            <Version N="Value">1.0.2.0</Version>
-          </En>
         </DCT>
       </Obj>
       <Obj N="lastRelease" RefId="5">
         <TNRef RefId="2" />
         <DCT>
           <En>
-            <S N="Key">version</S>
-            <Version N="Value">1.0.3.0</Version>
-          </En>
-          <En>
             <S N="Key">date</S>
             <Obj N="Value" RefId="6">
-              <DT>2021-03-23T15:06:39.6209154+11:00</DT>
+              <DT>2022-08-15T13:37:30.2022173+10:00</DT>
               <MS>
                 <Obj N="DisplayHint" RefId="7">
                   <TN RefId="4">
@@ -92,6 +88,10 @@
                 </Obj>
               </MS>
             </Obj>
+          </En>
+          <En>
+            <S N="Key">version</S>
+            <Version N="Value">1.0.7.0</Version>
           </En>
         </DCT>
       </Obj>

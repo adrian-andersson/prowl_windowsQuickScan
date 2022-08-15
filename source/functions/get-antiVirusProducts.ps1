@@ -6,9 +6,9 @@ function Get-prowlAntivirusProducts {
     )
     BEGIN
     {
-        if($PSVersionTable.PSVersion -gt [version]::new('5.0.0'))
-        {
-            [Flags()] enum ProductState 
+
+        $enumCode = @'
+[Flags()] enum ProductState 
             {
                 Off         = 0x0000
                 On          = 0x1000
@@ -36,15 +36,21 @@ function Get-prowlAntivirusProducts {
                 ProductOwner    = 0x0F00
                 ProductState    = 0xF000
             }
+'@
+
+        $enumSB = [scriptblock]::create($enumCode)
+        if($PSVersionTable.PSVersion -gt [version]::new('5.0.0'))
+        {
+            . $enumSB
         }
         
     }
     PROCESS
     {
         try{
-            $AntivirusProduct = Get-CimInstance -Namespace root/SecurityCenter2 -Classname AntiVirusProduct
+            $AntivirusProduct = Get-CimInstance -Namespace root/SecurityCenter2 -Classname AntiVirusProduct -ErrorAction Stop
         }catch{
-            write-warning 'CIMInstance for NameSpace SecurityCenter2 and class AntiVirusProduct unavailable'
+            write-warning 'CIMInstance for NameSpace SecurityCenter2 and class AntiVirusProduct unavailable - Either means no AV or your windows ver is old and this class doesnt exist'
         }
         
         if($AntivirusProduct)
