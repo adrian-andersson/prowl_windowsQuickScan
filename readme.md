@@ -36,37 +36,44 @@ Start PowerShell in Admin
 
 ### Download and import
 
-
 ```powershell
+#Ensure TLS 12 is enabled. Should not be a problem for most PowerShell and OS Configs, but just in case (TLS1.2 is required by GH)
 [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
-$path = 'c:\psprowl'
-$ver = '1.0.4'
-$gitLink = 'https://github.com/adrian-andersson/prowl_autobot/releases/download'
+$path = 'c:\psprowl' #DownloadPath
 
+#Code to get the latest release
+$releaseList = Invoke-RestMethod 'https://api.github.com/repos/adrian-andersson/prowl_autobot/releases'
+$latestRelease = $releaseList |Sort-Object -Property published_at -Descending |Select-Object -First 1
+$verTag = $latestRelease.tag_name.replace('v','')
+write-warning "Latest published Name: $($latestRelease.name) - From: $($latestRelease.published_at) - VersionTag:$verTag"
+$latestDownloadLink = $($latestRelease.assets.where{$_.name -eq 'prowl.zip'}|select-object -First 1).browser_download_url
+
+#Code to download and expand
 if(!(test-path $path))
 {
     new-item -itemtype directory -path $path
 }
 $zipPath = "$path\prowl.zip"
-Invoke-WebRequest -Uri "$gitLink/v$ver/prowl.zip" -OutFile $zipPath -Verbose -UseBasicParsing
+Invoke-WebRequest -Uri $latestDownloadLink -OutFile $zipPath -Verbose -UseBasicParsing
 
-#Check for expand-archive
+#Check for, and expand-archive
 if($(try{get-command expand-archive -erroraction stop}catch{}))
 {
     expand-archive $zipPath $path
-
 }else{
+    write-warning 'Your version of PowerShell does not support Expand-Archive, failing back to legacy mode'
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     [System.IO.Compression.ZipFile]::ExtractToDirectory($zipPath,'c:\prowl\')
 }
 
-import-module "$path\prowl\$ver\prowl.psd1"
+#Import module
+import-module "$path\prowl\$verTag\prowl.psd1"
 ```
 
 ### Start Investigating
 
 ```powershell
-get-prowlSystemReport
+get-prowlSystemReport -filepath 'c:\psProwlReport.txt'
 
 ```
 

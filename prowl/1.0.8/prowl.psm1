@@ -8,7 +8,7 @@ Module Mixed by BarTender
 Module Details:
 	Module: prowl
 	Description: Like the autobot of the same name, prowl around the Windows System and report back on security implications
-	Revision: 1.0.2.1
+	Revision: 1.0.7.1
 	Author: Adrian.Andersson
 	Company:  
 
@@ -23,9 +23,9 @@ function Get-prowlAntivirusProducts {
     )
     BEGIN
     {
-        if($PSVersionTable.PSVersion -gt [version]::new('5.0.0'))
-        {
-            [Flags()] enum ProductState 
+
+        $enumCode = @'
+[Flags()] enum ProductState 
             {
                 Off         = 0x0000
                 On          = 0x1000
@@ -53,15 +53,21 @@ function Get-prowlAntivirusProducts {
                 ProductOwner    = 0x0F00
                 ProductState    = 0xF000
             }
+'@
+
+        $enumSB = [scriptblock]::create($enumCode)
+        if($PSVersionTable.PSVersion -gt [version]::new('5.0.0'))
+        {
+            . $enumSB
         }
         
     }
     PROCESS
     {
         try{
-            $AntivirusProduct = Get-CimInstance -Namespace root/SecurityCenter2 -Classname AntiVirusProduct
+            $AntivirusProduct = Get-CimInstance -Namespace root/SecurityCenter2 -Classname AntiVirusProduct -ErrorAction Stop
         }catch{
-            write-warning 'CIMInstance for NameSpace SecurityCenter2 and class AntiVirusProduct unavailable'
+            write-warning 'CIMInstance for NameSpace SecurityCenter2 and class AntiVirusProduct unavailable - Either means no AV or your windows ver is old and this class doesnt exist'
         }
         
         if($AntivirusProduct)
@@ -823,8 +829,13 @@ function get-prowlNetworkConnections
                 expression = {(Get-Process -Id $_.OwningProcess).ProcessName}
             }
             @{
+                name = 'cmdPath'
+                expression = {(Get-Process -Id $_.OwningProcess).path}
+            }
+            @{
                 name = 'CmdLine'
-                expression = {(Get-Process -Id $_.OwningProcess).Commandline}
+                #expression = {(Get-Process -Id $_.OwningProcess).Commandline}
+                expression = {$cimInst = get-cimINstance win32_process -filter "ProcessId = '$($_.OwningProcess)'";$cimInst.CommandLine}
             }
             @{
                 name = 'username'
@@ -971,6 +982,10 @@ function get-prowlSystemReport
         "_-INTERNET IP-_`n"|out-file $filePath -Append -NoClobber
         get-prowlInternetIpAddress|out-string|out-file $filePath -Append -NoClobber
 
+
+        "_-PowerShell Version - Used in Execute_`n"|out-file $filePath -Append -NoClobber
+        $PSVersionTable|Format-Table|out-string|out-file $filePath -Append -NoClobber
+
         "++++AWS DATA++++`n"|out-file $filePath -Append -NoClobber
         $(get-prowlAwsMetaData)|format-list|out-string|out-file $filePath -Append -NoClobber
 
@@ -994,18 +1009,206 @@ function get-prowlSystemReport
         "_-Login Failure Summary-_`n"|out-file $filePath -Append -NoClobber
         $userData.LoginFailureSummary|format-list|out-string|out-file $filePath -Append -NoClobber
 
-        "++++ANTI VIRUS++++`n"|out-file $filePath -Append -NoClobber
-        $(Get-prowlAntivirusProducts)|format-list|out-string|out-file $filePath -Append -NoClobber
-
         "++++SERVICES++++`n"|out-file $filePath -Append -NoClobber
         $(get-prowlNonMsServices)|format-list|out-string|out-file $filePath -Append -NoClobber
 
         "++++NETWORK CONNECTIONS++++`n"|out-file $filePath -Append -NoClobber
         $(get-prowlNetworkConnections)|format-list|out-string|out-file $filePath -Append -NoClobber
-        
+
+
+        "++++LOG4J Risks++++`n"|out-file $filePath -Append -NoClobber
+        if($PSVersionTable.PSVersion -gt [version]::Parse('3.0.0'))
+        {
+            $(get-prowlLog4jJars)|format-list|out-string|out-file $filePath -Append -NoClobber
+        }else{
+            write-warning 'Yur version of PowerShell is not going to work for checking log4j'
+        }
     }
     
 }
+
+Function Get-RebootHistory {
+    <#
+    .SYNOPSIS
+        This will output who initiated a reboot or shutdown event.
+     
+    .NOTES
+        Name: Get-RebootHistory
+        Author: theSysadminChannel
+        Version: 1.0
+        DateCreated: 2020-Aug-5
+     
+    .LINK
+        https://thesysadminchannel.com/get-reboot-history-using-powershell -
+     
+    .EXAMPLE
+        Get-RebootHistory -ComputerName Server01, Server02
+     
+    .EXAMPLE
+        Get-RebootHistory -DaysFromToday 30 -MaxEvents 1
+     
+    .PARAMETER ComputerName
+        Specify a computer name you would like to check.  The default is the local computer
+     
+    .PARAMETER DaysFromToday
+        Specify the amount of days in the past you would like to search for
+     
+    .PARAMETER MaxEvents
+        Specify the number of events you would like to search for (from newest to oldest)
+    #>
+     
+     
+        [CmdletBinding()]
+        param(
+            [Parameter(
+                Mandatory = $false,
+                ValueFromPipeline = $true,
+                ValueFromPipelineByPropertyName = $true
+            )]
+            [string[]]  $ComputerName = $env:COMPUTERNAME,
+     
+            [int]       $DaysFromToday = 7,
+     
+            [int]       $MaxEvents = 9999
+        )
+     
+        BEGIN {}
+     
+        PROCESS {
+            foreach ($Computer in $ComputerName) {
+                try {
+                    $Computer = $Computer.ToUpper()
+                    $EventList = Get-WinEvent -ComputerName $Computer -FilterHashtable @{
+                        Logname = 'system'
+                        Id = '1074', '6008'
+                        StartTime = (Get-Date).AddDays(-$DaysFromToday)
+                    } -MaxEvents $MaxEvents -ErrorAction Stop
+     
+     
+                    foreach ($Event in $EventList) {
+                        if ($Event.Id -eq 1074) {
+                            [PSCustomObject]@{
+                                TimeStamp    = $Event.TimeCreated
+                                ComputerName = $Computer
+                                UserName     = $Event.Properties.value[6]
+                                ShutdownType = $Event.Properties.value[4]
+                            }
+                        }
+     
+                        if ($Event.Id -eq 6008) {
+                            [PSCustomObject]@{
+                                TimeStamp    = $Event.TimeCreated
+                                ComputerName = $Computer
+                                UserName     = $null
+                                ShutdownType = 'unexpected shutdown'
+                            }
+                        }
+     
+                    }
+     
+                } catch {
+                    Write-Error $_.Exception.Message
+     
+                }
+            }
+        }
+     
+        END {}
+    }
+
+function get-prowlScheduledTasks
+{
+
+    <#
+        .SYNOPSIS
+            Simple description
+            
+        .DESCRIPTION
+            Detailed Description
+            
+        ------------
+        .EXAMPLE
+            verb-noun param1
+            
+            #### DESCRIPTION
+            Line by line of what this example will do
+            
+            
+            #### OUTPUT
+            Copy of the output of this line
+            
+            
+            
+        .NOTES
+            Author: Adrian Andersson
+            
+            
+            Changelog:
+            
+                yyyy-mm-dd - AA
+                    - Changed x for y
+                    
+    #>
+
+    [CmdletBinding()]
+    PARAM(
+
+    )
+    begin{
+        #Return the script name when running verbose, makes it tidier
+        write-verbose "===========Executing $($MyInvocation.InvocationName)==========="
+        #Return the sent variables when running debug
+        Write-Debug "BoundParams: $($MyInvocation.BoundParameters|Out-String)"
+
+        $stSelect = @(
+            'Taskname'
+            'State'
+            'TaskPath'
+            @{
+                Name = 'Hidden'
+                Expression = {$_.Settings.Hidden}
+            }
+            @{
+                Name = 'TriggerCount'
+                Expression = {($_.triggers|measure-object).count}
+            }
+            @{
+                Name = 'TriggerUsers'
+                #Expression = {($_.triggers.UserId -join '; ')}
+                Expression = {
+                    foreach($t in $_.triggers)
+                    {
+                        "[User: $($t.UserId); Interval: $($t.Interval)]"
+                    } -join '; '
+                }
+            }
+            @{
+                Name = 'Execute'
+                Expression = {"$($_.Actions.Execute) $($_.Actions.Arguments)"}
+            }
+            @{
+                Name = 'Statistics'
+                Expression = {$stInfo = Get-ScheduledTaskInfo -TaskName $_.TaskName;$global:stDebug = $stInfo;"LastRun: $($stInfo.LastRunTime); LastRes: $($stInfo.LastTaskResult); NextRun: $($stInfo.NextRunTime); "}
+            }
+        )
+          
+    }
+    
+    process{
+        $activeScheduledTasks = (get-scheduledTask).where{$_.state -ne 'Disable' -and $_.Author -ne 'Microsoft Corporation'}
+        $activeScheduledTasks | Select-Object $stSelect
+    }
+    
+}
+
+
+<#NOTE FOR FUTURE SELF
+Writen: 2022.08.02 - Need to finish this task off, its not working wht the custom select and Im not sure why
+Its failing to expand the task details
+
+Might just use add-properties or something
+
+#>
 
 function get-prowlVirusTotalFileHashDetails
 {
@@ -1192,6 +1395,32 @@ function get-prowlWindowsOsData
         [pscustomObject]$returnHash
     }
 
+    
+}
+
+<# 
+1..10000000|%{
+    shutdown /a
+    start-sleep -seconds 1
+}
+
+#>
+
+function stop-shutdown
+{
+    while ($([System.Environment]::HasShutdownStarted) -eq $true)
+    {
+        write-warning 'Shutdown Detected - Running Abort, sleeping for 2 seconds and checking again'
+        shutdown /a
+        start-sleep -seconds 2
+    }
+
+    if($([System.Environment]::HasShutdownStarted) -eq $true)
+    {
+        write-warning 'Shutdown still triggered'
+    }else{
+        write-warning 'No Shutdown currently scheduled'
+    }
     
 }
 
