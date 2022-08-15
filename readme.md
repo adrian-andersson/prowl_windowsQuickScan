@@ -42,7 +42,7 @@ Start PowerShell in Admin
 $path = 'c:\psprowl' #DownloadPath
 
 #Code to get the latest release
-$releaseList = Invoke-RestMethod 'https://api.github.com/repos/adrian-andersson/prowl_autobot/releases'
+$releaseList = Invoke-RestMethod 'https://api.github.com/repos/adrian-andersson/prowl_windowsQuickScan/releases'
 $latestRelease = $releaseList |Sort-Object -Property published_at -Descending |Select-Object -First 1
 $verTag = $latestRelease.tag_name.replace('v','')
 write-warning "Latest published Name: $($latestRelease.name) - From: $($latestRelease.published_at) - VersionTag:$verTag"
