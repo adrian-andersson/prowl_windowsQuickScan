@@ -64,7 +64,6 @@ function get-prowlSystemReport
         "_-INTERNET IP-_`n"|out-file $filePath -Append -NoClobber
         get-prowlInternetIpAddress|out-string|out-file $filePath -Append -NoClobber
 
-
         "_-PowerShell Version - Used in Execute_`n"|out-file $filePath -Append -NoClobber
         $PSVersionTable|Format-Table|out-string|out-file $filePath -Append -NoClobber
 
@@ -97,13 +96,15 @@ function get-prowlSystemReport
         "++++NETWORK CONNECTIONS++++`n"|out-file $filePath -Append -NoClobber
         $(get-prowlNetworkConnections)|format-list|out-string|out-file $filePath -Append -NoClobber
 
+        "++++Active ScheduledTasks++++`n"|out-file $filePath -Append -NoClobber
+        $(get-prowlScheduledTasks)|format-list|out-string|out-file $filePath -Append -NoClobber
 
         "++++LOG4J Risks++++`n"|out-file $filePath -Append -NoClobber
         if($PSVersionTable.PSVersion -gt [version]::Parse('3.0.0'))
         {
             $(get-prowlLog4jJars)|format-list|out-string|out-file $filePath -Append -NoClobber
         }else{
-            write-warning 'Yur version of PowerShell is not going to work for checking log4j'
+            write-warning 'Your version of PowerShell is not going to work for checking log4j'
         }
     }
     
