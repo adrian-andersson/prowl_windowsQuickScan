@@ -32,6 +32,7 @@ function get-prowlSystemReport
         Write-Debug "BoundParams: $($MyInvocation.BoundParameters|Out-String)"
         $header = @(
             '##### PROWL INSTANCE REPORT #####'
+            "$(get-date -Format 'o')"
             "`n`n`n`n"
         )
     }
@@ -41,6 +42,8 @@ function get-prowlSystemReport
         {
             throw 'Not Elevated'
         }
+
+        $stopwatch = [system.diagnostics.stopwatch]::StartNew()
 
         $header -join "`n"|out-file $filePath
 
@@ -106,6 +109,9 @@ function get-prowlSystemReport
         }else{
             write-warning 'Your version of PowerShell is not going to work for checking log4j'
         }
+
+        $stopwatch.Stop()
+        "##### PROWL INSTANCE REPORT - END #####`n`nTimeToComplete: $($stopwatch.Elapsed.ToString())`n"|out-file $filePath -Append -NoClobber
     }
     
 }
